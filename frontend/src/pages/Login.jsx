@@ -1,13 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { reset, login } from "../features/auth/authSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 function Login() {
   const [loginData, setLoginData] = useState({
     email: "",
     password: "",
   });
+
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { isLoading, isError, user, isSuccess, message } = useSelector(
+    (state) => state.auth
+  );
 
   const handleChange = (e) => {
     setLoginData((prevState) => ({
@@ -18,15 +27,28 @@ function Login() {
 
   const { email, password } = loginData;
 
+  useEffect(() => {
+    if (isError) {
+      toast.error(message);
+    }
+    if (isSuccess) {
+      navigate("/");
+    }
+    return () => dispatch(reset());
+  }, [isError, isSuccess, user, message, navigate, dispatch]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error("All field input required..!");
+    } else if (email && password) {
+      const userData = {
+        email,
+        password,
+      };
+      dispatch(login(userData));
     } else {
-      const res = await axios.post("/login", { email, password });
-      toast.success("Login Success");
-      // console.log(res.data);
-      return res.data;
+      return toast.error("Login Failed");
     }
   };
 
